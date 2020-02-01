@@ -1,7 +1,7 @@
 import asyncio
 from random import randint
 
-from interfaces import ITempCtrl, IStorage
+from ..interfaces import ITempCtrl, IStorage
 
 
 class MockTempCtrl(ITempCtrl):
