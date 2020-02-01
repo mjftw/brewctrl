@@ -2,7 +2,7 @@ import argparse
 import os
 from aiohttp import web
 
-from ITempCtrl import ITempCtrl
+from interfaces import ITempCtrl
 
 
 class TempCtrlAPI:
