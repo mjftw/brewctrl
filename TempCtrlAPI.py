@@ -18,16 +18,16 @@ class TempCtrlAPI:
         ])
 
     async def get_temperature(self, request):
-        temperature = await self.tempctrl.get_temperature
+        temperature = await self.tempctrl.get_temperature()
         return web.Response(body=str(temperature))
 
     async def get_setpoint(self, request):
-        setpoint = self.tempctrl.setpoint
+        setpoint = await self.tempctrl.get_setpoint()
         return web.Response(body=str(setpoint))
 
     async def set_setpoint(self, request):
         setpoint = int(await request.text())
-        self.tempctrl.setpoint = setpoint
+        await self.tempctrl.set_setpoint(setpoint)
         return web.Response()
 
     def start(self):
