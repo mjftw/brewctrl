@@ -16,3 +16,9 @@ class MockTempCtrl(ITempCtrl):
 
     async def get_temperature(self):
         return self._setpoint + randint(00, 20)/10 - 1
+
+    async def start(self, refresh_period_s):
+        pass
+
+    async def stop(self):
+        pass
