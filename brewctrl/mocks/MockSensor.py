@@ -5,4 +5,6 @@ from ..interfaces import ISensor
 
 class MockSensor(ISensor):
     async def read(self):
-        return randint(0, 101)
+        value = randint(0, 101)
+        print(f'{self.__class__.__name__}: {value}')
+        return value

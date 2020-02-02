@@ -5,9 +5,9 @@ if __name__ == '__main__':
     TempCtrlAPI(
         tempctrl=TempCtrl(
             refresh_period_s=3,
-            storage=JsonStorage('settings.json'),
+            storage=MockStorage(),
             temp_sensor=MockSensor(),
-            hot_power=MockPower(),
-            cold_power=MockPower()
+            hot_power=MockPower('Hot'),
+            cold_power=MockPower('Cold')
         )
     ).start()
