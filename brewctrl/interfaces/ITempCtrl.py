@@ -15,6 +15,14 @@ class ITempCtrl(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
+    async def get_tolerance(self):
+        pass
+
+    @abc.abstractmethod
+    async def set_tolerance(self, tolerance):
+        pass
+
+    @abc.abstractmethod
     async def start(self, refresh_period_s):
         pass
 

@@ -5,7 +5,6 @@ from aiohttp import web
 from aiohttp_sse import sse_response, EventSourceResponse
 
 from .interfaces import ITempCtrl
-from .sse_helper import sse_packet
 
 
 class TempCtrlAPI:
@@ -18,6 +17,8 @@ class TempCtrlAPI:
             web.get('/temperature', self.get_temperature),
             web.get('/setpoint', self.get_setpoint),
             web.post('/setpoint', self.set_setpoint),
+            web.get('/tolerance', self.get_tolerance),
+            web.post('/tolerance', self.set_tolerance),
             web.get('/datastream', self.datastream),
         ])
 
@@ -34,6 +35,15 @@ class TempCtrlAPI:
     async def set_setpoint(self, request):
         setpoint = int(await request.text())
         await self.tempctrl.set_setpoint(setpoint)
+        return web.Response()
+
+    async def get_tolerance(self, request):
+        tolerance = await self.tempctrl.get_tolerance()
+        return web.Response(body=str(tolerance))
+
+    async def set_tolerance(self, request):
+        tolerance = int(await request.text())
+        await self.tempctrl.set_tolerance(tolerance)
         return web.Response()
 
     async def datastream(self, request):

@@ -1,6 +1,14 @@
 import asyncio
 from datetime import datetime
 from .interfaces import ITempCtrl, IStorage, ISensor, IPower
+from enum import Enum
+
+
+class ControllerState(Enum):
+    IDLE = 0
+    HEATING = 1
+    COOLING = 2
+    ERROR = 3
 
 
 class TempCtrl(ITempCtrl):
@@ -8,13 +16,13 @@ class TempCtrl(ITempCtrl):
             refresh_period_s: int,
             storage: IStorage,
             temp_sensor: ISensor,
-            hot_power: IPower=None,
-            cold_power: IPower=None,
+            hot_power: IPower,
+            cold_power: IPower,
         ):
         assert isinstance(storage, IStorage)
         assert isinstance(temp_sensor, ISensor)
-        assert isinstance(hot_power, IPower) or hot_power is None
-        assert isinstance(cold_power, IPower) or cold_power is None
+        assert isinstance(hot_power, IPower)
+        assert isinstance(cold_power, IPower)
 
         self.storage = storage
         self.temp_sensor = temp_sensor
@@ -23,6 +31,7 @@ class TempCtrl(ITempCtrl):
         self.refresh_period_s = refresh_period_s
 
         self._running = False
+        self._state = ControllerState.IDLE
 
     async def get_setpoint(self):
         return await self.storage.read_int('setpoint')
@@ -32,6 +41,12 @@ class TempCtrl(ITempCtrl):
 
     async def get_temperature(self):
         return await self.temp_sensor.read()
+
+    async def get_tolerance(self):
+        return await self.storage.read_int('tolerance')
+
+    async def set_tolerance(self, tolerance):
+        return await self.storage.write_int('tolerance', tolerance)
 
     async def start(self):
         self._running = True
@@ -48,23 +63,49 @@ class TempCtrl(ITempCtrl):
         self._running = False
 
     async def update(self):
-        print('Update')
-        if not self.hot_power and not self.cold_power:
-            # No control, so nothing to do
-            return
-
-        temp = await self.temp_sensor.read()
+        temperature = await self.get_temperature()
         setpoint = await self.get_setpoint()
+        tolerance = await self.get_tolerance()
+        state = await self.get_state()
+        next_state = state
 
-        if temp > setpoint:
-            if self.hot_power:
-                await self.hot_power.off()
-            if self.cold_power:
-                await self.cold_power.on()
-        elif temp < setpoint:
-            if self.hot_power:
-                await self.hot_power.on()
-            if self.cold_power:
-                await self.cold_power.off()
+        if self._state == ControllerState.COOLING:
+            if temperature <= setpoint:
+                next_state = ControllerState.IDLE
 
+        elif self._state == ControllerState.IDLE:
+            if temperature >= setpoint + tolerance:
+                next_state = ControllerState.COOLING
+            elif temperature <= setpoint - tolerance:
+                next_state = ControllerState.HEATING
+
+        elif self._state == ControllerState.HEATING:
+            if temperature >= setpoint:
+                next_state = ControllerState.IDLE
+
+        asyncio.ensure_future(self.set_state(next_state))
+
+    async def get_state(self):
+        if self.cold_power.is_on():
+            if self.hot_power.is_on():
+                return ControllerState.ERROR
+            else:
+                return ControllerState.COOLING
+        else:
+            if self.hot_power.is_on():
+                return ControllerState.HEATING
+            else:
+                return ControllerState.IDLE
+
+
+    async def set_state(self, state: ControllerState):
+        if state == ControllerState.COOLING:
+            await self.cold_power.on()
+            await self.hot_power.off()
+        elif state == ControllerState.IDLE:
+            await self.cold_power.off()
+            await self.hot_power.off()
+        elif state == ControllerState.HEATING:
+            await self.cold_power.off()
+            await self.hot_power.on()
 
