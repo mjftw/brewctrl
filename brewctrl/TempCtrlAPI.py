@@ -5,11 +5,14 @@ from aiohttp import web
 from aiohttp_sse import sse_response, EventSourceResponse
 
 from .interfaces import ITempCtrl
+from .SSEStream import SSEStream
 
 
 class TempCtrlAPI:
-    def __init__(self, tempctrl: ITempCtrl):
+    def __init__(self, tempctrl: ITempCtrl, event_stream: SSEStream):
         assert isinstance(tempctrl, ITempCtrl)
+        assert isinstance(event_stream, SSEStream)
+
         self.tempctrl = tempctrl
 
         self.app = web.Application()
@@ -19,7 +22,7 @@ class TempCtrlAPI:
             web.post('/setpoint', self.set_setpoint),
             web.get('/tolerance', self.get_tolerance),
             web.post('/tolerance', self.set_tolerance),
-            web.get('/datastream', self.datastream),
+            web.get('/datastream', event_stream.stream),
         ])
 
         self._tempctrl_task = None
@@ -45,21 +48,6 @@ class TempCtrlAPI:
         tolerance = int(await request.text())
         await self.tempctrl.set_tolerance(tolerance)
         return web.Response()
-
-    async def datastream(self, request):
-        resp = EventSourceResponse(headers={'X-SSE': 'aiohttp_sse'})
-        await resp.prepare(request)
-        while True:
-            temp = await self.tempctrl.get_temperature()
-            data = {
-                'temperature': temp,
-                'time': datetime.now().isoformat()
-            }
-            await resp.send(data=json.dumps(data), event='data')
-            await asyncio.sleep(1)
-        resp.stop_streaming()
-        await resp.wait()
-        return resp
 
     async def _init_app(self):
         self._tempctrl_task = asyncio.ensure_future(self.tempctrl.start())
