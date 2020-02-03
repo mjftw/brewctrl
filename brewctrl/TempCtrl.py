@@ -86,13 +86,16 @@ class TempCtrl(ITempCtrl):
         asyncio.ensure_future(self.set_state(next_state))
 
     async def get_state(self):
-        if self.cold_power.is_on():
-            if self.hot_power.is_on():
+        cold_on = await self.cold_power.is_on()
+        hot_on = await self.hot_power.is_on()
+
+        if cold_on:
+            if hot_on:
                 return ControllerState.ERROR
             else:
                 return ControllerState.COOLING
         else:
-            if self.hot_power.is_on():
+            if hot_on:
                 return ControllerState.HEATING
             else:
                 return ControllerState.IDLE
