@@ -36,7 +36,7 @@ class TempCtrlAPI:
         return web.Response(body=str(setpoint))
 
     async def set_setpoint(self, request):
-        setpoint = int(await request.text())
+        setpoint = float(await request.text())
         await self.tempctrl.set_setpoint(setpoint)
         return web.Response()
 
@@ -45,11 +45,12 @@ class TempCtrlAPI:
         return web.Response(body=str(tolerance))
 
     async def set_tolerance(self, request):
-        tolerance = int(await request.text())
+        tolerance = float(await request.text())
         await self.tempctrl.set_tolerance(tolerance)
         return web.Response()
 
     async def _init_app(self):
+        #TODO: Find way to capture tempctrl exceptions
         self._tempctrl_task = asyncio.ensure_future(self.tempctrl.start())
         return self.app
 

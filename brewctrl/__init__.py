@@ -1,4 +1,5 @@
 from .TempCtrl import TempCtrl
 from .TempCtrlAPI import TempCtrlAPI
-from .JsonStorage import JsonStorage
+from .JsonConfig import JsonConfig
 from .SSEStream import SSEStream
+from .W1TempSensor import W1TempSensor

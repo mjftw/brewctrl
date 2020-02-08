@@ -1,11 +1,11 @@
-from ..interfaces import IStorage
+from ..interfaces import IConfig
 
 
-class MockStorage(IStorage):
+class MockConfig(IConfig):
     def __init__(self):
         self.data = {}
 
-    async def read_int(self, name):
+    async def read(self, name):
         try:
             value = self.data[name]
         except KeyError:
@@ -13,6 +13,6 @@ class MockStorage(IStorage):
         print(f'{self.__class__.__name__}: Read {name}={value}')
         return value
 
-    async def write_int(self, name, value):
+    async def write(self, name, value):
         print(f'{self.__class__.__name__}: Write {name}={value}')
         self.data[name] = value
