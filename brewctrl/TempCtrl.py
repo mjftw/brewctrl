@@ -36,10 +36,6 @@ class TempCtrl(ITempCtrl):
         self._running = False
         self._state = ControllerState.IDLE
 
-    async def _send_event(self, event_name, data):
-        if self.event_stream:
-            asyncio.ensure_future(self.event_stream.put(event_name, data))
-
     async def get_setpoint(self):
         return await self.storage.read_int('setpoint')
 
@@ -80,22 +76,24 @@ class TempCtrl(ITempCtrl):
         state = await self.get_state()
         next_state = state
 
-        if self._state == ControllerState.COOLING:
+        if state == ControllerState.COOLING:
             if temperature <= setpoint:
                 next_state = ControllerState.IDLE
 
-        elif self._state == ControllerState.IDLE:
+        elif state == ControllerState.IDLE:
             if temperature >= setpoint + tolerance:
                 next_state = ControllerState.COOLING
             elif temperature <= setpoint - tolerance:
                 next_state = ControllerState.HEATING
 
-        elif self._state == ControllerState.HEATING:
+        elif state == ControllerState.HEATING:
             if temperature >= setpoint:
                 next_state = ControllerState.IDLE
 
         if next_state != state:
-            asyncio.ensure_future(self.set_state(next_state))
+            await self._send_state_change_event(state)
+
+        asyncio.ensure_future(self.set_state(next_state))
 
     async def get_state(self):
         cold_on = await self.cold_power.is_on()
@@ -112,19 +110,25 @@ class TempCtrl(ITempCtrl):
             else:
                 return ControllerState.IDLE
 
-
     async def set_state(self, state: ControllerState):
         if state == ControllerState.COOLING:
             await self.cold_power.on()
             await self.hot_power.off()
-            await self._send_event('change_state', 'cooling')
         elif state == ControllerState.IDLE:
             await self.cold_power.off()
             await self.hot_power.off()
-            await self._send_event('change_state', 'idle')
         elif state == ControllerState.HEATING:
             await self.cold_power.off()
             await self.hot_power.on()
+
+    async def _send_event(self, event_name, data):
+        if self.event_stream:
+            asyncio.ensure_future(self.event_stream.put(event_name, data))
+
+    async def _send_state_change_event(self, state: ControllerState):
+        if state == ControllerState.COOLING:
+            await self._send_event('change_state', 'cooling')
+        elif state == ControllerState.IDLE:
+            await self._send_event('change_state', 'idle')
+        elif state == ControllerState.HEATING:
             await self._send_event('change_state', 'heating')
-
-
