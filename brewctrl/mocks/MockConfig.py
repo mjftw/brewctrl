@@ -10,9 +10,9 @@ class MockConfig(IConfig):
             value = self.data[name]
         except KeyError:
             value = 0
-        print(f'{self.__class__.__name__}: Read {name}={value}')
+        print('{}: Read {}={}'.format(self.__class__.__name__, name, value))
         return value
 
     async def write(self, name, value):
-        print(f'{self.__class__.__name__}: Write {name}={value}')
+        print('{}: Write {}={}'.format(self.__class__.__name__, name, value))
         self.data[name] = value

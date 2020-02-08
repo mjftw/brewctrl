@@ -94,7 +94,7 @@ class TempCtrl(ITempCtrl):
                 next_state = ControllerState.IDLE
 
         if next_state != state:
-            print(f'State: {state} -> {next_state}')
+            print('State: {} -> {}'.format(state, next_state))
             await self._send_state_change_event(state)
 
         asyncio.ensure_future(self.set_state(next_state))

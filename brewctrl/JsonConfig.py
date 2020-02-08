@@ -38,7 +38,8 @@ class JsonConfig(IConfig):
             return None
 
         if name not in data:
-            raise MissingConfig(f'Config "{name}" not found in {self.filename}')
+            raise MissingConfig(
+                'Config "{}" not found in {}'.format(name, self.filename))
 
         return data[name]
 
